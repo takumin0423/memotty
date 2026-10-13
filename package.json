@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter @memotty/web dev",
-    "build": "pnpm --filter @memotty/web build"
+    "build": "pnpm --filter @memotty/web build",
+    "test": "pnpm -r --if-present test"
   },
   "devDependencies": {
     "oxfmt": "^0.72.0"
