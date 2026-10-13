@@ -4,7 +4,6 @@ packages:
 allowBuilds:
   esbuild: true
   workerd: true
-catalogMode: prefer
 catalogPrune: true
 catalog:
   hono: ^4.13.13
