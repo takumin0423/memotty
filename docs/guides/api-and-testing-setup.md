@@ -19,7 +19,9 @@ apps/web/                  … デプロイの単位（1 Worker）
   src/routes/              … TanStack Router のルート（ファイルベース）
   src/routeTree.gen.ts     … 自動生成されるファイル（コミットするが、手で編集しない）
 packages/api/              … @memotty/api（Hono アプリ本体と AppType）
-  src/
+  src/index.ts             … Hono アプリと AppType を export する
+  src/index.test.ts        … テストは対象のファイルの隣に置く
+  tsconfig.json
   vitest.config.ts
 ```
 
@@ -54,7 +56,7 @@ allowBuilds:
 ## TDD の進め方
 
 1. `packages/api` で `pnpm test`（`vitest` のウォッチモード）を起動したままにする
-2. **Red**：下に挙げるテストケースを **1 つだけ** 書き、期待した理由で失敗するのを確認する（import のエラーで落ちるのは期待した失敗ではない）
+2. **Red**：下に挙げるテストケースを **1 つだけ** 書き、期待した理由で失敗するのを確認する（import のエラーで落ちるのは期待した失敗ではない。最初のテストの前に、`basePath("/api")` だけを付けた空のアプリを export しておけば、「ルートが無いので 404 が返る」という期待した理由で落ちる）
 3. **Green**：テストを通すための最小限のコードを書く。ベタ書きでもかまわない
 4. **Refactor**：テストが通ったままの状態で、名前・構造・重複を整える
 5. 次のテストケースに進む。新しいテストケースが浮かんだら、すぐに書かずにリストに足しておく
@@ -70,9 +72,18 @@ allowBuilds:
 **方針**
 
 - `packages/api/package.json`：`name` を `@memotty/api`、`type` を `module` にし、`exports` で Hono アプリと `AppType` を公開する。`scripts` には `"test": "vitest"` を書く。
+  - `exports` はビルドした `.js` ではなく、TypeScript のソース（`./src/index.ts`）を直接指す。`@memotty/api` を読み込むのは同じリポジトリの Vite・wrangler・Vitest・`tsc` だけで、どれも `.ts` をそのまま扱えるので、`packages/api` にビルドの手順は要らない。
+- 依存を追加する前に、「事前に知っておくこと」の `allowBuilds` を `pnpm-workspace.yaml` に書いておく（書き忘れて `ERR_PNPM_IGNORED_BUILDS` が出たら、`pnpm approve-builds` で `esbuild` と `workerd` だけを許可する）。
+  - `pnpm --filter @memotty/api add hono`
+  - `pnpm --filter @memotty/api add -D vitest @cloudflare/vitest-plugin @cloudflare/workers-types typescript`（`typescript` は `apps/web` と同じバージョンにそろえる）
 - アプリには `basePath("/api")` を付ける。`/api` まで含めて `packages/api` の責任範囲にし、`apps/web` の入口は何も足さずに export するだけにする。
 - ルートの `package.json` に `"test": "pnpm -r --if-present test"` を追加する。
 - `@cloudflare/vitest-plugin` には wrangler の設定ファイルを渡さず、`miniflare` オプションに直接設定を書く。`compatibilityDate` は Step 4 で作る `wrangler.jsonc` と同じ値にそろえる。
+  - 日付は、インストールされた workerd の日付以前にする。ローカルの workerd は自分の日付より新しい互換性の日付を知らないので、今日の日付にするとはみ出すことがある。workerd の日付は `pnpm --filter @memotty/api why workerd` で表示されるバージョン（例：`1.20261006.1` なら `2026-10-06`）で分かる。
+  - 日付を上げると実行時の挙動が変わることがあるので、新しいランタイムの機能が必要になったときに、2 つの値を一緒に上げる。
+- `packages/api` の tsconfig は、Workers のランタイムの型に `@cloudflare/workers-types` を使う。Cloudflare は Worker 本体には `wrangler types` の出力を勧めているが、ライブラリや共有パッケージには `@cloudflare/workers-types` を勧めている。`packages/api` は wrangler の設定ファイルを持たず、`apps/web` の生成物にも依存させない（依存の向きを `packages/api` ← `apps/web` に保つ）ので、こちらを使う。
+  - `types` に `"@cloudflare/vitest-plugin/types"` だけを指定すると、`Request` や `Response` の型が見つからず、`hc<AppType>` のクライアントが `unknown` になる（RPC の型が壊れる）。
+  - `lib` に `DOM` は入れない（Workers はブラウザではない）。
 
 **設定例**
 
@@ -91,7 +102,38 @@ export default defineConfig({
 });
 ```
 
-tsconfig では、`types` に `"@cloudflare/vitest-plugin/types"` を指定する。
+```jsonc
+// packages/api/tsconfig.json
+{
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["ES2023"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "types": ["@cloudflare/workers-types", "@cloudflare/vitest-plugin/types"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "moduleDetection": "force",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+  },
+  "include": ["src"],
+}
+```
+
+```jsonc
+// packages/api/package.json（依存は pnpm add で追記される）
+{
+  "name": "@memotty/api",
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "test": "vitest" },
+}
+```
 
 **最初のテストケース**
 
@@ -100,7 +142,7 @@ tsconfig では、`types` に `"@cloudflare/vitest-plugin/types"` を指定す�
 
 **確認すること**：テストが workerd 上で動くこと、Vitest 5・TS 7・`@cloudflare/vitest-plugin` の組み合わせが動くこと。ここでつまずいた場合は、`cloudflareTest()` を外して Node 上で動かす構成に一時的に戻して、先に進んでかまわない（テストのコードは変えずに済む）。
 
-公式ドキュメント：<https://developers.cloudflare.com/workers/testing/vitest-integration/write-your-first-test/>
+公式ドキュメント：<https://developers.cloudflare.com/workers/testing/vitest-integration/write-your-first-test/>、<https://developers.cloudflare.com/workers/languages/typescript/>、<https://developers.cloudflare.com/workers/configuration/compatibility-dates/>、<https://nodejs.org/api/packages.html#exports>
 
 ## Step 2. RPC の型テストを書く
 
@@ -196,13 +238,14 @@ plugins: [react(), babel({ presets: [reactCompilerPreset()] }), cloudflare()];
   - `createRouter` には `defaultPreload: "intent"` と `defaultPreloadStaleTime: 0` を指定する（データが新しいかどうかの判断は Query に任せる）。
   - `QueryClientProvider` で全体を包む（SSR 用の統合パッケージは不要）。
 - API クライアントは `hc<AppType>("/")` で作り、`queryOptions` のファクトリにまとめる。`queryFn` では `parseResponse()` を使う。
-- loader では `context.queryClient.query({ ...healthQuery, staleTime: "static" })` で先読みし、コンポーネントでは `useSuspenseQuery` で読む。
+- loader では `context.queryClient.query(healthQuery)` で先読みし、コンポーネントでは `useSuspenseQuery(healthQuery)` で読む。
+  - `staleTime` は `healthQuery`（`queryOptions` のファクトリ）の中に書く。`query()` に渡した `staleTime` はその 1 回の取得にしか効かないので、loader だけに書くと、`useSuspenseQuery` は既定の `staleTime: 0` で動き、マウントした直後にもう一度取りに行く。health はほぼ変わらないので `"static"` でよい。
   - `ensureQueryData` と `prefetchQuery` は非推奨になったので使わない（ネット上の例はまだ古い書き方が多い）。
 - `__root` にレイアウトとナビゲーション（`Link`）を置く。
 
 **確認すること**：`pnpm dev` で `/` を開き、`status: ok` が表示されること。開発者ツールの Network タブで、`/api/health` へのリクエストが 1 回だけ出ていること。
 
-公式ドキュメント：<https://tanstack.com/router/latest/docs/framework/react/installation/with-vite>、<https://tanstack.com/router/latest/docs/integrations/query>、<https://tanstack.com/router/latest/docs/framework/react/guide/external-data-loading>
+公式ドキュメント：<https://tanstack.com/router/latest/docs/framework/react/installation/with-vite>、<https://tanstack.com/router/latest/docs/integrations/query>、<https://tanstack.com/router/latest/docs/framework/react/guide/external-data-loading>、<https://tanstack.com/query/latest/docs/framework/react/guides/prefetching>
 
 ## Step 6. 素振り用の画面を作る
 
@@ -226,7 +269,7 @@ plugins: [react(), babel({ presets: [reactCompilerPreset()] }), cloudflare()];
 **方針**
 
 - `apps/web` で `pnpm run deploy` を実行する（`vite build` の後に `wrangler deploy`）。`routes` を書いていないので、`https://memotty.<アカウントのサブドメイン>.workers.dev` で公開される。
-- Free プランの上限は「1 日 10 万リクエスト」と「1 回の実行につき CPU 時間 10ms」。上限を超えた分のリクエストはエラー（1027）になるが、請求は発生しない。静的アセットへのリクエストでは Worker が動かないので、上限に数えられるのは `/api/*` へのリクエストだけ。
+- Free プランの上限は「1 日 10 万リクエスト」と「1 回の実行につき CPU 時間 10ms」。上限を超えると、`run_worker_first` に一致したリクエスト（`/api/*`）は静的アセットに切り替わらず 429 を返すが、請求は発生しない。静的アセットへのリクエストは無料で回数の制限も無く、上限に数えられるのは `/api/*` へのリクエストだけ。
 
 **確認すること**
 
@@ -241,7 +284,7 @@ plugins: [react(), babel({ presets: [reactCompilerPreset()] }), cloudflare()];
 - 止める：`wrangler.jsonc` に `"workers_dev": false` を書いて再デプロイするか、ダッシュボードで `workers.dev` の公開をオフにする。元に戻すのも簡単。
 - 消す：`pnpm wrangler delete` を実行する。もう一度 `deploy` すれば、同じ名前・同じ URL で作り直せる。消えるのはデプロイの履歴と、Worker に登録した secrets や環境変数（今回は無い）。
 
-公式ドキュメント：<https://developers.cloudflare.com/workers/configuration/routing/workers-dev/>、<https://developers.cloudflare.com/workers/platform/limits/>
+公式ドキュメント：<https://developers.cloudflare.com/workers/configuration/routing/workers-dev/>、<https://developers.cloudflare.com/workers/platform/limits/>、<https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/>
 
 ## Step 8. 後片付け
 
@@ -252,6 +295,6 @@ plugins: [react(), babel({ presets: [reactCompilerPreset()] }), cloudflare()];
 
 - 認証と CORS（Chrome 拡張と Mac アプリに着手する前。Tauri の `plugin-http` を使うかどうかも含む）
 - 古すぎるクライアントを弾く仕組み（Mac アプリを最初にリリースする前）
-- D1（スキーマ、マイグレーションの置き場所、`wrangler types` との連携）
+- D1（スキーマ、マイグレーションの置き場所、`wrangler types` との連携）。`packages/api` は `apps/web` に依存させないので、bindings の型は `apps/web` に生成される `worker-configuration.d.ts` を参照せず、`packages/api` の側で持つ方法を決める
 - `memotty.app` のカスタムドメイン（MVP として動くようになってから）と staging 環境
 - UI のテストと E2E、`apps/web` への Vitest の導入

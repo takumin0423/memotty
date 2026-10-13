@@ -7,9 +7,7 @@
           {
             "type": "command",
             "command": "node",
-            "args": [
-              "${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-human-code.ts"
-            ],
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-human-code.ts"],
             "onFailure": "block"
           }
         ]
