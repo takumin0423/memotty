@@ -1,0 +1,13 @@
+{
+  "name": "memotty",
+  "private": true,
+  "type": "module",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.7.0",
+      "onFail": "download"
+    }
+  },
+  "packageManager": "pnpm@12.7.0"
+}
