@@ -48,7 +48,7 @@ allowBuilds:
 - ルートはメソッドチェーンで定義し、その結果の型を `AppType` として export する
 - `c.json(body, 200)` のように、ステータスコードを明示する
 - `strict` を有効にする（サーバー側とクライアント側の両方。TS 7 では既定で有効になっているが、明示しておく）
-- `hono` のバージョンを `packages/api` と `apps/web` で揃える
+- `hono` のバージョンを `packages/api` と `apps/web` で揃える（pnpm の catalog で一元管理する）
 - `onError`・`notFound`・`HTTPException` で返したレスポンスは、RPC の型に反映されない。クライアントは `parseResponse()` が投げる `DetailedError` の `detail.data` から、Problem Details を読む。
 
 公式ドキュメント：<https://hono.dev/docs/guides/rpc>

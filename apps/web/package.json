@@ -11,11 +11,14 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
+    "@memotty/api": "workspace:*",
+    "hono": "catalog:",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@babel/core": "^8.0.7",
+    "@cloudflare/vite-plugin": "^1.63.1",
     "@rolldown/plugin-babel": "^0.2.3",
     "@types/babel__core": "^7.20.5",
     "@types/node": "^26.6.5",
@@ -24,7 +27,8 @@
     "@vitejs/plugin-react": "^6.1.1",
     "babel-plugin-react-compiler": "^1.0.0",
     "oxlint": "^1.81.0",
-    "typescript": "^7.0.2",
-    "vite": "^8.3.0"
+    "typescript": "catalog:",
+    "vite": "^8.3.0",
+    "wrangler": "^4.149.0"
   }
 }

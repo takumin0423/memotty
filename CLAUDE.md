@@ -10,6 +10,7 @@ memotty は pnpm workspace によるモノレポ。現時点では `apps/web`（
 
 - Node / pnpm のバージョンは `mise.toml` で固定（node 26.10.0, pnpm 12.7.0）。`mise install` で揃える。
 - パッケージマネージャは pnpm のみ（`packageManager` / `devEngines` で指定）。npm / yarn は使わない。
+- 複数のパッケージで使う依存は、pnpm の catalog（`pnpm-workspace.yaml` の `catalog`）でバージョンを一元管理し、各 `package.json` では `catalog:` で参照する。2 つ目のパッケージで使い始めた時点で catalog に移す（新規なら `pnpm add <pkg> --save-catalog`）。パッケージごとに別のバージョンが必要なときだけ直接指定し、理由を PR に書く。1 つのパッケージでしか使わない依存は直接指定のままでよい。
 - Lint は ESLint ではなく **oxlint**（`apps/web/.oxlintrc.json`）、フォーマッタは Prettier ではなく **oxfmt**（ルートの `.oxfmtrc.json`）。VS Code では `oxc.oxc-vscode` で保存時フォーマット。
 - TypeScript は 7 系。`apps/web` の tsconfig は `verbatimModuleSyntax` と `erasableSyntaxOnly` が有効なので、型のみの import は `import type` を使い、`enum` や `namespace` などの非消去構文は使わない。`noUnusedLocals` / `noUnusedParameters` も有効。
 - React Compiler が `@rolldown/plugin-babel` 経由で有効（`apps/web/vite.config.ts`）。手動の `useMemo` / `useCallback` は基本的に不要。

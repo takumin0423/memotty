@@ -162,6 +162,15 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    hono:
+      specifier: ^4.13.13
+      version: 4.13.13
+    typescript:
+      specifier: ^7.0.2
+      version: 7.0.2
+
 importers:
 
   .:
@@ -172,6 +181,12 @@ importers:
 
   apps/web:
     dependencies:
+      '@memotty/api':
+        specifier: workspace:*
+        version: link:../../packages/api
+      hono:
+        specifier: 'catalog:'
+        version: 4.13.13
       react:
         specifier: ^19.2.8
         version: 19.3.0
@@ -182,9 +197,12 @@ importers:
       '@babel/core':
         specifier: ^8.0.7
         version: 8.0.7
+      '@cloudflare/vite-plugin':
+        specifier: ^1.63.1
+        version: 1.63.1(@types/node@26.6.5)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2))(wrangler@4.149.0(@cloudflare/workers-types@5.20261010.1)(@types/node@26.6.5))
       '@rolldown/plugin-babel':
         specifier: ^0.2.3
-        version: 0.2.4(@babel/core@8.0.7)(rolldown@1.2.13)(vite@8.3.4(@types/node@26.6.5))
+        version: 0.2.4(@babel/core@8.0.7)(rolldown@1.2.13)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2))
       '@types/babel__core':
         specifier: ^7.20.5
         version: 7.20.5
@@ -199,7 +217,7 @@ importers:
         version: 19.3.0(@types/react@19.3.0)
       '@vitejs/plugin-react':
         specifier: ^6.1.1
-        version: 6.1.2(@rolldown/plugin-babel@0.2.4(@babel/core@8.0.7)(rolldown@1.2.13)(vite@8.3.4(@types/node@26.6.5)))(babel-plugin-react-compiler@1.0.0)(vite@8.3.4(@types/node@26.6.5))
+        version: 6.1.2(@rolldown/plugin-babel@0.2.4(@babel/core@8.0.7)(rolldown@1.2.13)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2)))(babel-plugin-react-compiler@1.0.0)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2))
       babel-plugin-react-compiler:
         specifier: ^1.0.0
         version: 1.0.0
@@ -207,16 +225,19 @@ importers:
         specifier: ^1.81.0
         version: 1.87.0
       typescript:
-        specifier: ^7.0.2
+        specifier: 'catalog:'
         version: 7.0.2
       vite:
         specifier: ^8.3.0
-        version: 8.3.4(@types/node@26.6.5)
+        version: 8.3.4(@types/node@26.6.5)(esbuild@0.28.2)
+      wrangler:
+        specifier: ^4.149.0
+        version: 4.149.0(@cloudflare/workers-types@5.20261010.1)(@types/node@26.6.5)
 
   packages/api:
     dependencies:
       hono:
-        specifier: ^4.13.13
+        specifier: 'catalog:'
         version: 4.13.13
     devDependencies:
       '@cloudflare/vitest-plugin':
@@ -226,7 +247,7 @@ importers:
         specifier: ^5.20261010.1
         version: 5.20261010.1
       typescript:
-        specifier: ^7.0.2
+        specifier: 'catalog:'
         version: 7.0.2
       vitest:
         specifier: ^5.0.3
@@ -320,6 +341,13 @@ packages:
     peerDependenciesMeta:
       workerd:
         optional: true
+
+  '@cloudflare/vite-plugin@1.63.1':
+    resolution: {integrity: sha512-6EtAoRqWryl43bYiCl7yvCBHi3R+L/fM11zu8zRyvBMe0Yk63NseyrhA19nO5Y1yrrk6dD+Su7NBZhDuUbjh0g==}
+    hasBin: true
+    peerDependencies:
+      vite: ^6.1.0 || ^7.0.0 || ^8.0.0
+      wrangler: ^4.149.0
 
   '@cloudflare/vitest-plugin@1.4.0':
     resolution: {integrity: sha512-SgIhyhpVH+2MVSJxidG8gosqrpzF25IwKevQhPykwulTgAFe4s0Nkj71pNzqCkwV2+A4NKkHJP2ReyyRsoIxsg==}
@@ -1842,6 +1870,20 @@ snapshots:
     optionalDependencies:
       workerd: 1.20261006.1
 
+  '@cloudflare/vite-plugin@1.63.1(@types/node@26.6.5)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2))(wrangler@4.149.0(@cloudflare/workers-types@5.20261010.1)(@types/node@26.6.5))':
+    dependencies:
+      '@cloudflare/unenv-preset': 2.16.2(unenv@2.0.0-rc.24)(workerd@1.20261006.1)
+      miniflare: 5.20261006.1-alpha(@types/node@26.6.5)
+      unenv: 2.0.0-rc.24
+      vite: 8.3.4(@types/node@26.6.5)(esbuild@0.28.2)
+      workerd: 1.20261006.1
+      wrangler: 4.149.0(@cloudflare/workers-types@5.20261010.1)(@types/node@26.6.5)
+      ws: 8.21.0
+    transitivePeerDependencies:
+      - '@types/node'
+      - bufferutil
+      - utf-8-validate
+
   '@cloudflare/vitest-plugin@1.4.0(@cloudflare/workers-types@5.20261010.1)(@types/node@26.6.5)(vitest@5.0.3(@types/node@26.6.5)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2)))':
     dependencies:
       cjs-module-lexer: 1.2.3
@@ -2258,13 +2300,13 @@ snapshots:
   '@rolldown/binding-win32-x64-msvc@1.2.13':
     optional: true
 
-  '@rolldown/plugin-babel@0.2.4(@babel/core@8.0.7)(rolldown@1.2.13)(vite@8.3.4(@types/node@26.6.5))':
+  '@rolldown/plugin-babel@0.2.4(@babel/core@8.0.7)(rolldown@1.2.13)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2))':
     dependencies:
       '@babel/core': 8.0.7
       picomatch: 4.0.7
       rolldown: 1.2.13
     optionalDependencies:
-      vite: 8.3.4(@types/node@26.6.5)
+      vite: 8.3.4(@types/node@26.6.5)(esbuild@0.28.2)
 
   '@rolldown/pluginutils@1.0.1': {}
 
@@ -2378,12 +2420,12 @@ snapshots:
   '@typescript/typescript-win32-x64@7.0.2':
     optional: true
 
-  '@vitejs/plugin-react@6.1.2(@rolldown/plugin-babel@0.2.4(@babel/core@8.0.7)(rolldown@1.2.13)(vite@8.3.4(@types/node@26.6.5)))(babel-plugin-react-compiler@1.0.0)(vite@8.3.4(@types/node@26.6.5))':
+  '@vitejs/plugin-react@6.1.2(@rolldown/plugin-babel@0.2.4(@babel/core@8.0.7)(rolldown@1.2.13)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2)))(babel-plugin-react-compiler@1.0.0)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2))':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
-      vite: 8.3.4(@types/node@26.6.5)
+      vite: 8.3.4(@types/node@26.6.5)(esbuild@0.28.2)
     optionalDependencies:
-      '@rolldown/plugin-babel': 0.2.4(@babel/core@8.0.7)(rolldown@1.2.13)(vite@8.3.4(@types/node@26.6.5))
+      '@rolldown/plugin-babel': 0.2.4(@babel/core@8.0.7)(rolldown@1.2.13)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2))
       babel-plugin-react-compiler: 1.0.0
 
   '@vitest/mocker@5.0.3(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2))':
@@ -2754,17 +2796,6 @@ snapshots:
       picocolors: 1.1.1
 
   verkit@0.5.0: {}
-
-  vite@8.3.4(@types/node@26.6.5):
-    dependencies:
-      lightningcss: 1.33.0
-      picomatch: 4.0.7
-      postcss: 8.5.29
-      rolldown: 1.2.13
-      tinyglobby: 0.2.17
-    optionalDependencies:
-      '@types/node': 26.6.5
-      fsevents: 2.3.3
 
   vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2):
     dependencies:
