@@ -5,7 +5,12 @@
   "scripts": {
     "dev": "pnpm --filter @memotty/web dev",
     "build": "pnpm --filter @memotty/web build",
-    "test": "pnpm -r --if-present test"
+    "test": "pnpm -r --if-present test",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck"
   },
   "devDependencies": {
     "oxfmt": "^0.72.0"
