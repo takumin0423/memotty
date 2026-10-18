@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "deploy": "vite build && wrangler deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
-    "lint": "oxlint",
+    "lint": "oxlint --fix",
+    "lint:check": "oxlint",
     "preview": "vite preview",
     "typecheck": "tsc -b"
   },
