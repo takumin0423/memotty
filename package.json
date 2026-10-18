@@ -9,8 +9,9 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "lint": "pnpm -r --if-present lint",
+    "lint:check": "pnpm -r --if-present lint:check",
     "typecheck": "pnpm -r --if-present typecheck",
-    "check": "pnpm format:check && pnpm lint && pnpm typecheck"
+    "check": "pnpm format:check && pnpm lint:check && pnpm typecheck"
   },
   "devDependencies": {
     "oxfmt": "^0.72.0"
@@ -18,9 +19,9 @@
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "12.7.0",
+      "version": "12.14.0",
       "onFail": "download"
     }
   },
-  "packageManager": "pnpm@12.7.0"
+  "packageManager": "pnpm@12.14.0"
 }

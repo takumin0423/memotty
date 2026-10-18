@@ -8,10 +8,12 @@ memotty は pnpm workspace によるモノレポ。現時点では `apps/web`（
 
 ## ツールチェーン
 
-- Node / pnpm のバージョンは `mise.toml` で固定（node 26.10.0, pnpm 12.7.0）。`mise install` で揃える。
+- Node / pnpm のバージョンは `mise.toml` で固定（node 26.12.0, pnpm 12.14.0）。`mise install` で揃える。
 - パッケージマネージャは pnpm のみ（`packageManager` / `devEngines` で指定）。npm / yarn は使わない。
+- 複数のパッケージで使う依存は、pnpm の catalog（`pnpm-workspace.yaml` の `catalog`）でバージョンを一元管理し、各 `package.json` では `catalog:` で参照する。2 つ目のパッケージで使い始めた時点で catalog に移す（新規なら `pnpm add <pkg> --save-catalog`）。パッケージごとに別のバージョンが必要なときだけ直接指定し、理由を PR に書く。1 つのパッケージでしか使わない依存は直接指定のままでよい。
 - Lint は ESLint ではなく **oxlint**（`apps/web/.oxlintrc.json`）、フォーマッタは Prettier ではなく **oxfmt**（ルートの `.oxfmtrc.json`）。VS Code では `oxc.oxc-vscode` で保存時フォーマット。
 - TypeScript は 7 系。`apps/web` の tsconfig は `verbatimModuleSyntax` と `erasableSyntaxOnly` が有効なので、型のみの import は `import type` を使い、`enum` や `namespace` などの非消去構文は使わない。`noUnusedLocals` / `noUnusedParameters` も有効。
+- 相対 import には拡張子を付ける（`./foo.ts`、`./Bar.tsx`）。oxlint の `import/extensions`（`always`）で強制しており、`--fix` では直らないので手で付ける。
 - React Compiler が `@rolldown/plugin-babel` 経由で有効（`apps/web/vite.config.ts`）。手動の `useMemo` / `useCallback` は基本的に不要。
 
 ## コマンド
@@ -24,10 +26,12 @@ pnpm dev            # apps/web の Vite dev サーバー
 pnpm build          # apps/web の型チェック (tsc -b) + vite build
 pnpm test           # 各パッケージの test（現状は packages/api の Vitest）
 pnpm format         # oxfmt で整形（format:check は確認のみ）
-pnpm lint           # 各パッケージの lint（現状は apps/web の oxlint のみ）
+pnpm lint           # 各パッケージの lint を自動修正付きで実行（lint:check は確認のみ。現状は apps/web の oxlint のみ）
 pnpm typecheck      # 各パッケージの typecheck
-pnpm check          # format:check + lint + typecheck
+pnpm check          # format:check + lint:check + typecheck
 ```
+
+スクリプト名は「素の名前は修正する、`:check` は確認のみ」で揃える（`format` / `format:check`、`lint` / `lint:check`）。パッケージに lint を足すときも `lint` と `lint:check` の両方を用意する。
 
 パッケージ固有のスクリプトは filter 経由で実行する（例：`pnpm --filter @memotty/web preview`）。
 
@@ -38,7 +42,7 @@ pnpm check          # format:check + lint + typecheck
 - AI が書くファイルはリポジトリ内の Markdown（`.claude/` 配下のスキルも含む）。ソース・テスト・設定・スクリプト・`pnpm add` は人間が行う。例外はユーザーがそのタスクで明示的に依頼したときだけで、実装の代行は AI から提案しない。
 - コードの示し方は段階的に：方針と公式ドキュメント → 求められたら疑似コードや部分コード → さらに求められたら完成形。定型の設定例は最初から示してよい。
 - AI が実行するのは読み取り・検証（build / lint / test / dev）と、依頼時の commit・push（ブランチは常に最新の `main` から切って PR にする。PR は squash マージされるので、マージ済みブランチは再利用しない。マージと本番デプロイは人間）。
-  - commit の前に `pnpm check` を実行し、エラーが無いことを確認してから commit する。コマンドで自動修正できるもの（`pnpm format` での整形、oxlint の `--fix`）は AI が実行して直してよい。それ以外のエラーがあれば commit せず、原因と箇所を示して人間の修正を待つ。
+  - commit の前に `pnpm check` を実行し、エラーが無いことを確認してから commit する。コマンドで自動修正できるもの（`pnpm format` での整形、`pnpm lint` での oxlint の自動修正）は AI が実行して直してよい。それ以外のエラーがあれば commit せず、原因と箇所を示して人間の修正を待つ。
 - バグやコンフリクトは、AI が原因と次の一手を示し、編集は人間が行う。
 - レビューは「何が・なぜ問題か」を示し、設計判断・テスト・TypeScript（React / Hono）の書き方を重点に見る。依頼外で気づいた問題は一言添える。
 
