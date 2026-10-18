@@ -4,5 +4,6 @@
     "apps/web/src/routeTree.gen.ts",
     "apps/web/worker-configuration.d.ts",
     ".claude/settings.local.json"
-  ]
+  ],
+  "sortImports": true
 }
