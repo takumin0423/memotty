@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 
-const app = new Hono().basePath("/api").get("/health", (c) => {
+export const app = new Hono().basePath("/api").get("/health", (c) => {
   return c.json(
     {
       status: "ok",
@@ -9,5 +9,4 @@ const app = new Hono().basePath("/api").get("/health", (c) => {
   );
 });
 
-export default app;
 export type AppType = typeof app;

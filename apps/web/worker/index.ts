@@ -1,1 +1,1 @@
-export { default } from "@memotty/api";
+export { app as default } from "@memotty/api";

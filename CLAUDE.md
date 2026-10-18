@@ -14,6 +14,7 @@ memotty は pnpm workspace によるモノレポ。現時点では `apps/web`（
 - Lint は ESLint ではなく **oxlint**（`apps/web/.oxlintrc.json`）、フォーマッタは Prettier ではなく **oxfmt**（ルートの `.oxfmtrc.json`）。VS Code では `oxc.oxc-vscode` で保存時フォーマット。
 - TypeScript は 7 系。`apps/web` の tsconfig は `verbatimModuleSyntax` と `erasableSyntaxOnly` が有効なので、型のみの import は `import type` を使い、`enum` や `namespace` などの非消去構文は使わない。`noUnusedLocals` / `noUnusedParameters` も有効。
 - 相対 import には拡張子を付ける（`./foo.ts`、`./Bar.tsx`）。oxlint の `import/extensions`（`always`）で強制しており、`--fix` では直らないので手で付ける。
+- export は named export にそろえる。default export は、ツールが求める場所（`vite.config.ts` などの設定ファイル、Workers のエントリの `apps/web/worker/index.ts`）だけで使う。default export だと、import 候補にファイル名から作った名前で出てしまい、import する側の名前も揺れるため。
 - React Compiler が `@rolldown/plugin-babel` 経由で有効（`apps/web/vite.config.ts`）。手動の `useMemo` / `useCallback` は基本的に不要。
 
 ## コマンド

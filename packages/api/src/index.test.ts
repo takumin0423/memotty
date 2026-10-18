@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import app from ".";
+import { app } from ".";
 
 test("GET /api/healthが200を返す", async () => {
   const response = await app.request("/api/health");
