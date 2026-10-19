@@ -1,11 +1,9 @@
 import { Hono } from "hono";
 
-import { demoMessages } from "./demo/messages.ts";
 import { PROBLEM_JSON_HEADERS, problemDetails } from "./lib/problem-details.ts";
 
 export const app = new Hono()
   .basePath("/api")
-  .route("/demo/messages", demoMessages)
   .notFound((c) =>
     c.json(
       problemDetails(404, "Not Found", "指定されたパスは存在しません"),

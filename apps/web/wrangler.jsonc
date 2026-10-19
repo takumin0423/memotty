@@ -8,5 +8,4 @@
     "run_worker_first": ["/api/*"], // 真偽値ではなく配列で指定する（ADR 0002）
   },
   "upload_source_maps": true,
-  // Step 7 までは routes を書かない（workers.dev で公開する）
 }
