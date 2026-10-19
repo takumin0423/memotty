@@ -1,40 +1,16 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+memotty は pnpm workspace のモノレポ（`apps/*`・`packages/*`）。スクリプトはルートと各パッケージの `package.json` を見る。
 
-## 概要
+## コードの規約
 
-memotty は pnpm workspace によるモノレポ。現時点では `apps/web`（Vite + React のテンプレートから作成したばかりのフロントエンド）のみが存在する。`pnpm-workspace.yaml` は `apps/*` と `packages/*` を対象にしているが、`packages/` はまだ無い。
-
-## ツールチェーン
-
-- Node / pnpm のバージョンは `mise.toml` で固定（node 26.12.0, pnpm 12.14.0）。`mise install` で揃える。
-- パッケージマネージャは pnpm のみ（`packageManager` / `devEngines` で指定）。npm / yarn は使わない。
-- 複数のパッケージで使う依存は、pnpm の catalog（`pnpm-workspace.yaml` の `catalog`）でバージョンを一元管理し、各 `package.json` では `catalog:` で参照する。2 つ目のパッケージで使い始めた時点で catalog に移す（新規なら `pnpm add <pkg> --save-catalog`）。パッケージごとに別のバージョンが必要なときだけ直接指定し、理由を PR に書く。1 つのパッケージでしか使わない依存は直接指定のままでよい。
-- Lint は ESLint ではなく **oxlint**（`apps/web/.oxlintrc.json`）、フォーマッタは Prettier ではなく **oxfmt**（ルートの `.oxfmtrc.json`）。VS Code では `oxc.oxc-vscode` で保存時フォーマット。
-- TypeScript は 7 系。`apps/web` の tsconfig は `verbatimModuleSyntax` と `erasableSyntaxOnly` が有効なので、型のみの import は `import type` を使い、`enum` や `namespace` などの非消去構文は使わない。`noUnusedLocals` / `noUnusedParameters` も有効。
-- 相対 import には拡張子を付ける（`./foo.ts`、`./Bar.tsx`）。oxlint の `import/extensions`（`always`）で強制しており、`--fix` では直らないので手で付ける。
-- export は named export にそろえる。default export は、ツールが求める場所（`vite.config.ts` などの設定ファイル、Workers のエントリの `apps/web/worker/index.ts`）だけで使う。default export だと、import 候補にファイル名から作った名前で出てしまい、import する側の名前も揺れるため。
-- React Compiler が `@rolldown/plugin-babel` 経由で有効（`apps/web/vite.config.ts`）。手動の `useMemo` / `useCallback` は基本的に不要。
-
-## コマンド
-
-ルートから:
-
-```sh
-pnpm install
-pnpm dev            # apps/web の Vite dev サーバー
-pnpm build          # apps/web の型チェック (tsc -b) + vite build
-pnpm test           # 各パッケージの test（現状は packages/api の Vitest）
-pnpm format         # oxfmt で整形（format:check は確認のみ）
-pnpm lint           # 各パッケージの lint を自動修正付きで実行（lint:check は確認のみ。現状は apps/web の oxlint のみ）
-pnpm typecheck      # 各パッケージの typecheck
-pnpm check          # format:check + lint:check + typecheck
-```
-
-スクリプト名は「素の名前は修正する、`:check` は確認のみ」で揃える（`format` / `format:check`、`lint` / `lint:check`）。パッケージに lint を足すときも `lint` と `lint:check` の両方を用意する。
-
-パッケージ固有のスクリプトは filter 経由で実行する（例：`pnpm --filter @memotty/web preview`）。
+- パッケージマネージャは pnpm のみ。lint は oxlint、フォーマッタは oxfmt。
+- 依存は、1 つのパッケージでしか使わないうちは直接指定する。2 つ目のパッケージで使い始めた時点で pnpm の catalog に移し、`catalog:` で参照する（最初から複数のパッケージに入れるなら `pnpm add <pkg> --save-catalog`）。パッケージごとに別のバージョンが要るときだけ直接指定のままにし、理由を PR に書く。
+- スクリプト名は「素の名前は修正する、`:check` は確認のみ」でそろえる（`lint` / `lint:check`）。
+- 相対 import には拡張子を付ける（`./foo.ts`）。oxlint で検出するが、`--fix` では直らない。
+- export は named export にそろえる。default export はツールが求める場所（設定ファイル、Workers のエントリ）だけで使う。import する側の名前が揺れないようにするため。
+- トップレベルの関数は `function` 宣言で書く。アロー関数は、コールバック、関数の中の関数、変数に型を付けたいとき（`const f: MiddlewareHandler = ...`）、`React.memo` などで包むときに使う。
+- React Compiler が有効なので、手動の `useMemo` / `useCallback` は基本的に書かない。
 
 ## 開発の進め方
 
@@ -42,21 +18,13 @@ pnpm check          # format:check + lint:check + typecheck
 
 - AI が書くファイルはリポジトリ内の Markdown（`.claude/` 配下のスキルも含む）。ソース・テスト・設定・スクリプト・`pnpm add` は人間が行う。例外はユーザーがそのタスクで明示的に依頼したときだけで、実装の代行は AI から提案しない。
 - コードの示し方は段階的に：方針と公式ドキュメント → 求められたら疑似コードや部分コード → さらに求められたら完成形。定型の設定例は最初から示してよい。
-- AI が実行するのは読み取り・検証（build / lint / test / dev）と、依頼時の commit・push（ブランチは常に最新の `main` から切って PR にする。PR は squash マージされるので、マージ済みブランチは再利用しない。マージと本番デプロイは人間）。
-  - commit の前に `pnpm check` を実行し、エラーが無いことを確認してから commit する。コマンドで自動修正できるもの（`pnpm format` での整形、`pnpm lint` での oxlint の自動修正）は AI が実行して直してよい。それ以外のエラーがあれば commit せず、原因と箇所を示して人間の修正を待つ。
+- AI が実行するのは読み取り・検証（build / lint / test / dev）と、依頼時の commit・push。ブランチは常に最新の `main` から切って PR にする。PR は squash マージされるので、マージ済みブランチは再利用しない。マージと本番デプロイは人間が行う。
+  - commit の前に `pnpm check` を通す。`pnpm format` と `pnpm lint` で自動修正できるものは AI が直してよい。それ以外のエラーがあれば commit せず、原因と箇所を示して人間の修正を待つ。
 - バグやコンフリクトは、AI が原因と次の一手を示し、編集は人間が行う。
 - レビューは「何が・なぜ問題か」を示し、設計判断・テスト・TypeScript（React / Hono）の書き方を重点に見る。依頼外で気づいた問題は一言添える。
 
 ## Agent skills
 
-### Issue tracker
-
-Issue は GitHub Issues（takumin0423/memotty）で管理し、`gh` CLI で操作する。See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-デフォルトの5ラベル（needs-triage / needs-info / ready-for-agent / ready-for-human / wontfix）をそのまま使う。See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-single-context（ルートに `GLOSSARY.md` と `docs/adr/`）。See `docs/agents/domain.md`.
+- Issue tracker：GitHub Issues（takumin0423/memotty）を `gh` で操作する。See `docs/agents/issue-tracker.md`.
+- Triage labels：デフォルトの 5 ラベルをそのまま使う。See `docs/agents/triage-labels.md`.
+- Domain docs：single-context（ルートに `GLOSSARY.md` と `docs/adr/`）。See `docs/agents/domain.md`.
