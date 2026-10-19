@@ -14,5 +14,7 @@ TS のエコシステムでは Problem Details は主流ではない（2026-10 �
 ## Consequences
 
 - `type` は省略する。RFC 9457 では省略すると `about:blank`（ステータスコード以上の意味が無い）とみなされるので、`title` は HTTP のステータスの名前（`Bad Request`・`Not Found` など）にし、何が問題でどう直すかは `detail` に書く。
+- バリデーションの失敗は、`sValidator` の第 3 引数の hook で 400 の Problem Details を返す（既定の 400 は入力をそのまま返すため）。
+- `onError` は `HTTPException` も 500 にする。`HTTPException` を投げるエンドポイントを作るときは、`onError` に分岐を足す。
 - `Content-Type` は `application/problem+json`。Hono RPC の `parseResponse()` はこれも JSON として読み、`DetailedError` の `detail.data` に入れることをテストで確かめた。
 - 項目ごとのエラーなどの拡張メンバーが必要になったら、問題の種類を `https://memotty.app/problems/` の下の URI で定義し、`type`・`title`・ステータスコード・拡張メンバーをこの ADR に書いてから足す（RFC 9457 §3.2・§4）。フィールドの追加なので ADR 0003 の互換性は壊れない。

@@ -12,6 +12,35 @@ memotty は pnpm workspace のモノレポ（`apps/*`・`packages/*`）。スク
 - トップレベルの関数は `function` 宣言で書く。アロー関数は、コールバック、関数の中の関数、変数に型を付けたいとき（`const f: MiddlewareHandler = ...`）、`React.memo` などで包むときに使う。
 - React Compiler が有効なので、手動の `useMemo` / `useCallback` は基本的に書かない。
 
+## 依存を足すとき
+
+- 社内のプロキシ（`npm.flatt.tech`）と pnpm の `minimumReleaseAge` は、公開から日の浅いバージョンを拒否する。拒否されたら 1 つ前のバージョンを指定する。この制限は回避しない。
+- `allowBuilds` は `esbuild` と `workerd` だけ。pnpm 12 はインストール時のスクリプトを既定でブロックし、このスタックで必要なのはこの 2 つだけなので、他のパッケージで許可を求められたら許可せずに理由を調べる。
+- `pnpm add` の後は、`pnpm-lock.yaml` の差分で、知らないパッケージやインストール時のスクリプトが増えていないかを見る。
+- `@tanstack/zod-adapter`（2026-05 に乗っ取りの被害あり）と、`zod-js` などの名前の似た偽パッケージは入れない。TanStack Router は Zod 4 のスキーマをそのまま受け付けるので、アダプタは要らない。
+
+## パッケージの構成
+
+- `packages/api`（`@memotty/api`）が Hono アプリ本体と `AppType` を持ち、`apps/web` は Worker の入口・`wrangler.jsonc`・デプロイだけを担う（ADR 0002）。依存の向きは `packages/api` ← `apps/web` に保ち、`packages/api` から `apps/web` の生成物（`worker-configuration.d.ts` など）を参照しない。
+- `@memotty/api` の `exports` は、ビルドした `.js` ではなく `./src/index.ts` を指す。読み込むのは同じリポジトリの Vite・wrangler・Vitest・`tsc` だけで、どれも `.ts` を直接扱えるので、ビルドの手順は要らない。
+- `packages/api` の tsconfig は、Workers の型に `@cloudflare/workers-types` を使う（Cloudflare は共有パッケージにはこちらを勧めている。`wrangler types` の出力は `apps/web` 側で使う）。`types` を `@cloudflare/vitest-plugin/types` だけにすると `Request`・`Response` の型が無くなり、`hc<AppType>` が `unknown` になる。
+- `compatibility_date` は `apps/web/wrangler.jsonc` と `packages/api/vitest.config.ts` の 2 か所でそろえる。日付は、インストールされた workerd の日付（`pnpm --filter @memotty/api why workerd` のバージョンが `1.20261006.1` なら `2026-10-06`）以前にする。ローカルの workerd は自分より新しい日付を知らないため。日付を上げると実行時の挙動が変わることがあるので、新しいランタイムの機能が要るときに 2 つを一緒に上げる。
+- `apps/web/src/routeTree.gen.ts` は自動生成される。コミットするが、手で編集しない。
+
+## memotty API（Hono）
+
+- ルートはメソッドチェーンで定義し、その結果の型を `AppType` として export する。`app.get(...)` を後から足す書き方ではルートが型に残らず、`hc<AppType>` のクライアント自体が `unknown` になる（TS18046）。`app.route()` でつなぐサブアプリもメソッドチェーンで定義する。
+- `c.json(body, 200)` のようにステータスコードを明示する。1 つのエンドポイントが複数のステータスを返すとき、`InferResponseType<..., 404>` のように型を絞れる。
+- `onError`・`notFound`・`HTTPException` のレスポンスは RPC の型に載らない。型に載せたいエラーは、ハンドラの中で `c.json(problem, 404, ...)` として返す。
+- `hono` は catalog で全パッケージのバージョンをそろえる。サーバーとクライアントでバージョンがずれると RPC の型が合わなくなる。
+- クエリの値は文字列で届くので、数値は `z.coerce.number()` で受ける。このとき RPC の入力の型は `string | string[]` になり、ハンドラの中では `number` として扱える。
+
+## テスト
+
+- `packages/api` のテストは、`@cloudflare/vitest-plugin` で本番と同じ workerd 上で動かす。テストファイルは対象のファイルの隣に `*.test.ts` として置く。
+- `hono/testing` の `testClient(app)` で呼び、HTTP サーバーは立ち上げない。定義していないパスは `testClient` では呼べないので、`app.request()` を使う。
+- RPC の型テストは常設しない。型の崩れは、`hc<AppType>` を使う `apps/web` の `tsc -b`（`pnpm typecheck`）で検出できる。一時的に型を確かめたいときは `src/*.test-d.ts` に書けば `pnpm typecheck` で検査される。Vitest の typecheck モードは、TS 7（tsgo）の出力を正しく読めるか確かめていないので使わない。
+
 ## 開発の進め方
 
 ユーザーのスキル向上も目的なので、コードは人間が書き、AI は壁打ち・調査・文書作成・依頼時のレビューを担う（`docs/adr/0001-human-writes-code-ai-assists.md`）。この節はスキルの指示より優先する。
