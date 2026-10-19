@@ -1,14 +1,16 @@
-import { expect, test } from "vitest";
-import app from ".";
+import { describe, expect, test } from "vitest";
 
-test("GET /api/healthが200を返す", async () => {
-  const response = await app.request("/api/health");
+import { app } from "./index.ts";
 
-  expect(response.status).toBe(200);
-});
+describe("定義していないパス", () => {
+  test("ステータスコード404でProblem Detailsを返すこと", async () => {
+    const res = await app.request("/api/nope");
 
-test(`GET /api/healthのボディが{"status": "ok"}になる`, async () => {
-  const response = await app.request("/api/health");
-
-  expect(await response.json()).toEqual({ status: "ok" });
+    expect(res.status).toBe(404);
+    expect(res.headers.get("Content-Type")).toBe("application/problem+json");
+    expect(await res.json()).toMatchObject({
+      title: "Not Found",
+      status: 404,
+    });
+  });
 });

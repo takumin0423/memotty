@@ -11,6 +11,7 @@ function RootLayout() {
       <header>
         <nav>
           <Link to="/">Home</Link>
+          <Link to="/demo/messages">メモ一覧</Link>
         </nav>
       </header>
       <main>

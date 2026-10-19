@@ -10,33 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DemoMessagesIndexRouteImport } from './routes/demo/messages/index'
+import { Route as DemoMessagesIdRouteImport } from './routes/demo/messages/$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DemoMessagesIndexRoute = DemoMessagesIndexRouteImport.update({
+  id: '/demo/messages/',
+  path: '/demo/messages/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoMessagesIdRoute = DemoMessagesIdRouteImport.update({
+  id: '/demo/messages/$id',
+  path: '/demo/messages/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/demo/messages/$id': typeof DemoMessagesIdRoute
+  '/demo/messages/': typeof DemoMessagesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/demo/messages/$id': typeof DemoMessagesIdRoute
+  '/demo/messages': typeof DemoMessagesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/demo/messages/$id': typeof DemoMessagesIdRoute
+  '/demo/messages/': typeof DemoMessagesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/demo/messages/$id' | '/demo/messages/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/demo/messages/$id' | '/demo/messages'
+  id: '__root__' | '/' | '/demo/messages/$id' | '/demo/messages/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DemoMessagesIdRoute: typeof DemoMessagesIdRoute
+  DemoMessagesIndexRoute: typeof DemoMessagesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +68,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/demo/messages/': {
+      id: '/demo/messages/'
+      path: '/demo/messages'
+      fullPath: '/demo/messages/'
+      preLoaderRoute: typeof DemoMessagesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/messages/$id': {
+      id: '/demo/messages/$id'
+      path: '/demo/messages/$id'
+      fullPath: '/demo/messages/$id'
+      preLoaderRoute: typeof DemoMessagesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DemoMessagesIdRoute: DemoMessagesIdRoute,
+  DemoMessagesIndexRoute: DemoMessagesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
