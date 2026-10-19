@@ -5,10 +5,5 @@ export const Route = createFileRoute("/")({
 });
 
 function RouteComponent() {
-  return (
-    <div>
-      <h1>memotty</h1>
-      <p>メモを取るためのプロダクト</p>
-    </div>
-  );
+  return null;
 }

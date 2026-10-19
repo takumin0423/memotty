@@ -11,5 +11,8 @@ memotty の Web アプリ（React SPA）と API（Hono）は、`apps/web` から
 
 - `run_worker_first` は真偽値ではなく配列で指定する。`not_found_handling: "single-page-application"` だけだと、ブラウザで `/api/...` を直接開いたときに `index.html` が返ってしまうことがある。
 - Chrome 拡張と Tauri 製の Mac アプリにとっては `memotty.app` が別オリジンになるので、それらに着手する前に CORS（Tauri なら `@tauri-apps/plugin-http` を使うかどうかも）と認証の方式を決める必要がある。
-- `memotty.app` に移るのは、機能が一通りそろって MVP として動くようになってから。それまでは `*.workers.dev` の URL で公開する。Chrome 拡張と Mac アプリがその前に memotty API を呼ぶ可能性があるので、クライアントの API の URL は 1 か所で設定できるようにしておく。
-- Hono アプリ本体は `packages/api` に置いて全クライアントと型を共有し、`apps/web` は Worker の入口・`wrangler.jsonc`・デプロイだけを担う。
+- 本番へのデプロイは、機能が MVP レベルでそろい、ローカル（`pnpm build` のあと `pnpm preview`）で動作を確かめてから初めて行う。それまでは `*.workers.dev` も含めてどこにも公開しない。`pnpm preview` は本番と同じビルドを workerd で動かすので、`run_worker_first` や SPA へのフォールバックを本番に近い形で確かめられる。
+  - 初回のデプロイでは、`routes`（`memotty.app`）と、`workers.dev` の URL を公開するかどうか（`workers_dev`）を決める。`routes` が無いと `workers.dev` で公開される。
+  - Workers の Free プランの上限は「1 日 10 万リクエスト」と「1 回の実行につき CPU 時間 10ms」。上限に数えられるのは `run_worker_first` に一致した `/api/*` へのリクエストだけで、超えると 429 を返す。請求は発生しない。静的アセットは無料で回数の制限も無い。
+- Chrome 拡張と Mac アプリは、開発中はローカルの memotty API を、リリース後は `memotty.app` の API を呼ぶので、クライアントの API の URL は 1 か所で設定できるようにしておく。
+- Hono アプリ本体は `packages/api` に置いて全クライアントと型を共有し、`apps/web` は Worker の入口・`wrangler.jsonc`・デプロイだけを担う。D1 などの bindings の型は、`apps/web` に生成される `worker-configuration.d.ts` を参照せず、`packages/api` の側で持つ方法を D1 の導入時に決める。

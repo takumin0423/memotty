@@ -13,3 +13,6 @@ Web アプリ（と、同じ構成の SPA になる Chrome 拡張・Mac アプ�
 - データは loader で `queryClient` を使って先読みし、コンポーネントでは `useSuspenseQuery` で読む。QueryClient は Router の context に渡す。
 - Query 5.104 で `ensureQueryData` や `prefetchQuery` が非推奨になり、`queryClient.query(...)` への移行が進んでいる。古い書き方の例が多いので注意する。
 - `queryFn` では Hono の `parseResponse()` を使い、レスポンスが ok でないときは例外を投げて Query のエラーとして扱う。
+- loader と `useSuspenseQuery` には、`queryOptions` のファクトリで作った同じ options を渡す（引数があるクエリは、引数を取る関数にする）。
+- `staleTime` は `QueryClient` の `defaultOptions` で全体に設定し、必要なクエリだけ `queryOptions` の中で上書きする。loader の `query()` に渡した `staleTime` はその 1 回の取得にしか効かないので、そこだけに書くと、`useSuspenseQuery` は既定の `staleTime` で動いてマウントの直後にもう一度取りに行く。
+- `createRouter` には `defaultPreloadStaleTime: 0` を指定し、データが新しいかどうかの判断を Query に任せる。
