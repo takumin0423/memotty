@@ -9,14 +9,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@hono/standard-validator": "^0.4.0",
+    "@hono/standard-validator": "^0.4.1",
     "hono": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@cloudflare/vitest-plugin": "^1.4.0",
-    "@cloudflare/workers-types": "^5.20261010.1",
+    "@cloudflare/vitest-plugin": "^1.8.3",
+    "@cloudflare/workers-types": "^5.20261117.1",
     "typescript": "catalog:",
-    "vitest": "^5.0.3"
+    "vitest": "^5.1.0"
   }
 }
