@@ -14,7 +14,7 @@
     "check": "pnpm format:check && pnpm lint:check && pnpm typecheck"
   },
   "devDependencies": {
-    "oxfmt": "^0.72.0"
+    "oxfmt": "^0.79.0"
   },
   "packageManager": "pnpm@12.21.0"
 }
